@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import subprocess
 import sys
@@ -48,8 +48,8 @@ import pathlib
 import sys
 log = pathlib.Path({str(log_path)!r})
 log.write_text(log.read_text() + ' '.join(sys.argv[1:]) + '\\n' if log.exists() else ' '.join(sys.argv[1:]) + '\\n')
-if sys.argv[1:2] == ['list']:
-    print(json.dumps([{{'id': 'nb-project', 'name': 'Project Notebook'}}]))
+if sys.argv[1:] == ['list', '--json']:
+    print(json.dumps({{'notebooks': [{{'id': 'nb-project', 'title': 'Project Notebook'}}], 'count': 1}}))
 elif sys.argv[1:2] == ['ask']:
     print('answer from notebooklm')
 sys.exit(0)
@@ -179,9 +179,8 @@ def test_ask_delegates_to_notebooklm_runtime_and_outputs_answer_only(tmp_path):
     assert result.returncode == 0
     assert result.stdout == "answer from notebooklm\n"
     assert result.stderr == ""
-    assert log_path.read_text(encoding="utf-8").splitlines() == [
-        "use nb-project",
-        "ask What matters?",
+    assert log_path.read_text(encoding='utf-8').splitlines() == [
+        'ask --notebook nb-project What matters?',
     ]
 
 

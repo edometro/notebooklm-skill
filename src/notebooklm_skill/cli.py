@@ -1,4 +1,4 @@
-﻿"""Minimal nlm CLI implementation."""
+"""Minimal nlm CLI implementation."""
 
 from __future__ import annotations
 
@@ -199,25 +199,28 @@ def ensure_project_binding_excluded(target_dir: Path) -> None:
 
 
 def list_notebooks(notebooklm: Path) -> list[dict[str, object]]:
-    result = subprocess.run([str(notebooklm), "list"], text=True, capture_output=True)
+    result = subprocess.run([str(notebooklm), 'list', '--json'], text=True, capture_output=True)
     if result.returncode != 0:
         raise ExternalCommandError(result)
     try:
         data = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        raise NlmError("Could not parse notebooklm list output as JSON.") from exc
-    if not isinstance(data, list):
-        raise NlmError("Could not parse notebooklm list output as a list.")
-    return [item for item in data if isinstance(item, dict)]
+        raise NlmError('Could not parse notebooklm list --json output as JSON.') from exc
+    if not isinstance(data, dict):
+        raise NlmError('Could not parse notebooklm list --json output as an object.')
+    notebooks = data.get('notebooks')
+    if not isinstance(notebooks, list):
+        raise NlmError('Could not parse notebooklm list --json notebooks as a list.')
+    return [item for item in notebooks if isinstance(item, dict)]
 
 
 def find_notebook(notebooklm: Path, notebook_id: str) -> tuple[str, str]:
     for item in list_notebooks(notebooklm):
-        item_id = item.get("id")
-        item_name = item.get("name")
-        if item_id == notebook_id and isinstance(item_name, str) and item_name:
-            return notebook_id, item_name
-    raise NlmError(f"NotebookLM notebook not found: {notebook_id}")
+        item_id = item.get('id')
+        item_title = item.get('title')
+        if item_id == notebook_id and isinstance(item_title, str) and item_title:
+            return notebook_id, item_title
+    raise NlmError(f'NotebookLM notebook not found: {notebook_id}')
 
 
 def read_question(args: argparse.Namespace, stdin: TextIO) -> str:
@@ -249,20 +252,8 @@ def command_ask(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr:
         return 1
 
     notebooklm = require_runtime_command(home)
-    use_result = subprocess.run(
-        [str(notebooklm), "use", binding.notebook_id],
-        text=True,
-        capture_output=True,
-    )
-    if use_result.returncode != 0:
-        if use_result.stdout:
-            print(use_result.stdout, end="", file=stdout)
-        if use_result.stderr:
-            print(use_result.stderr, end="", file=stderr)
-        return use_result.returncode
-
     ask_result = subprocess.run(
-        [str(notebooklm), "ask", question],
+        [str(notebooklm), 'ask', '--notebook', binding.notebook_id, question],
         text=True,
         capture_output=True,
     )
