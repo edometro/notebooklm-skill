@@ -4,6 +4,15 @@ notebooklm-skill は、Google NotebookLM をコマンドラインからプログ
 
 ---
 
+## 現行の実行モデル
+
+本スキルの現行仕様では、各プロジェクトに個別の NotebookLM 用 venv を作らず、ユーザー単位の共有 runtime を使います。
+
+- 共有 runtime: `~/.local/share/notebooklm-skill`
+- 通常操作: `nlm use`, `nlm which`, `nlm ask`
+- 設計判断: `docs/adr/0001-use-nlm-as-shared-interface.md`, `docs/adr/0002-store-runtime-outside-skill-directory.md`
+- 実Runtime検証: `docs/runtime-verification.md`
+
 ## 概要と目的 (What it does)
 
 本スキルは、非公式 Python ライブラリ notebooklm-py を自動制御することで、Google NotebookLM をバックエンドとした強力な自動処理ワークフローをエージェントに提供します。
