@@ -52,6 +52,19 @@ description: Use Google NotebookLM from Codex through the shared nlm CLI. Trigge
    test -x ~/.local/share/notebooklm-skill/.venv/bin/notebooklm
    ```
 
+## PATH and verification policy
+
+ユーザー向け確認では PATH を一時的に追加しないでください。まず実際の入口をそのまま確認します。
+
+```bash
+command -v nlm
+nlm --help
+```
+
+失敗した場合は PATH shim が見えていない問題として報告します。skill checkout の `bin/nlm` を直接使うのは実装確認としては有効ですが、ユーザーが普段 `nlm` と打てることの確認とは分けて扱います。
+
+テスト方針と将来の仕様変更時に固定すべき境界は `docs/testing-policy.md` を参照してください。
+
 ## Runtime セットアップ
 
 `uv` がない場合は先に導入します。

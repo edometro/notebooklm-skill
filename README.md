@@ -12,6 +12,7 @@ notebooklm-skill は、Google NotebookLM をコマンドラインからプログ
 - 通常操作: `nlm use`, `nlm which`, `nlm ask`
 - 設計判断: `docs/adr/0001-use-nlm-as-shared-interface.md`, `docs/adr/0002-store-runtime-outside-skill-directory.md`
 - 実Runtime検証: `docs/runtime-verification.md`
+- PATH とテスト方針: `docs/testing-policy.md`
 
 ## 概要と目的 (What it does)
 
