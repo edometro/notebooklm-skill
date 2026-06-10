@@ -9,7 +9,7 @@ notebooklm-skill は、Google NotebookLM をコマンドラインからプログ
 本スキルの現行仕様では、各プロジェクトに個別の NotebookLM 用 venv を作らず、ユーザー単位の共有 runtime を使います。
 
 - 共有 runtime: `~/.local/share/notebooklm-skill`
-- 通常操作: `nlm use`, `nlm which`, `nlm ask`
+- 通常操作: `nlm doctor`, `nlm use`, `nlm which`, `nlm ask`
 - 設計判断: `docs/adr/0001-use-nlm-as-shared-interface.md`, `docs/adr/0002-store-runtime-outside-skill-directory.md`
 - 実Runtime検証: `docs/runtime-verification.md`
 - PATH とテスト方針: `docs/testing-policy.md`

@@ -208,3 +208,60 @@ def test_use_writes_project_binding_and_excludes_it_from_git(tmp_path):
         "notebook_name": "Project Notebook",
     }
     assert ".notebooklmrc" in (git_info / "exclude").read_text(encoding="utf-8")
+
+
+def test_doctor_reports_missing_path_and_runtime(tmp_path):
+    home = tmp_path / 'home'
+    workspace = home / 'Documents' / 'Information_Security'
+    workspace.mkdir(parents=True)
+
+    env = {'HOME': str(home), 'PATH': ''}
+    result = run_nlm(['doctor'], cwd=workspace, env=env)
+
+    assert result.returncode == 1
+    assert 'nlm doctor' in result.stdout
+    assert 'path: fail - nlm not found on PATH' in result.stdout
+    assert 'runtime: fail - ' in result.stdout
+    assert 'binding: warn - No NotebookLM binding found for this workspace.' in result.stdout
+
+
+def test_doctor_passes_with_path_runtime_and_binding(tmp_path):
+    home = tmp_path / 'home'
+    workspace = home / 'Documents' / 'Information_Security'
+    path_bin = tmp_path / 'bin'
+    workspace.mkdir(parents=True)
+    path_bin.mkdir()
+    write_rc(workspace / '.notebooklmrc', 'nb-project', 'Project Notebook')
+    write_fake_notebooklm(home)
+    (path_bin / 'nlm').symlink_to(ROOT / 'bin' / 'nlm')
+
+    env = {'HOME': str(home), 'PATH': str(path_bin) + os.pathsep + os.environ.get('PATH', '')}
+    result = run_nlm(['doctor'], cwd=workspace, env=env)
+
+    assert result.returncode == 0
+    assert 'path: ok - ' in result.stdout
+    assert 'runtime: ok - ' in result.stdout
+    assert 'runtime doctor: ok - notebooklm doctor passed' in result.stdout
+    assert 'binding: ok - Project Notebook (nb-project)' in result.stdout
+    assert result.stderr == ''
+
+
+def test_doctor_accepts_wrapper_path_shim(tmp_path):
+    home = tmp_path / 'home'
+    workspace = home / 'Documents' / 'Information_Security'
+    path_bin = tmp_path / 'bin'
+    workspace.mkdir(parents=True)
+    path_bin.mkdir()
+    write_rc(workspace / '.notebooklmrc', 'nb-project', 'Project Notebook')
+    write_fake_notebooklm(home)
+    wrapper = path_bin / 'nlm'
+    wrapper.write_text('NLM_SKILL_DIR=' + str(ROOT) + '\nexec $NLM_SKILL_DIR/bin/nlm\n', encoding='utf-8')
+    wrapper.chmod(0o755)
+
+    env = {'HOME': str(home), 'PATH': str(path_bin) + os.pathsep + os.environ.get('PATH', '')}
+    result = run_nlm(['doctor'], cwd=workspace, env=env)
+
+    assert result.returncode == 0
+    assert 'path: ok - ' in result.stdout
+    assert 'delegates to ' in result.stdout
+    assert 'runtime doctor: ok - notebooklm doctor passed' in result.stdout

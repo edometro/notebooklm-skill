@@ -30,9 +30,10 @@ skill checkout と shared runtime は別物です。skill checkout 内に `.venv
 ```bash
 command -v nlm
 nlm --help
+nlm doctor
 ```
 
-成功したら、作業ディレクトリで binding を確認します。
+`nlm doctor` は PATH shim、shared runtime、NotebookLM auth、現在の binding をまとめて確認します。成功したら、作業ディレクトリで binding を確認します。
 
 ```bash
 nlm which
@@ -42,6 +43,7 @@ nlm which
 
 - `nlm` が見つからない: PATH shim のセットアップへ進む
 - runtime が見つからない: shared runtime のセットアップへ進む
+- runtime doctor が失敗する: login と health check へ進む
 - auth error: login と health check へ進む
 - binding がない: notebook selection と workspace binding へ進む
 - binding がある: `nlm ask '質問文'` を実行できる
@@ -71,11 +73,14 @@ mkdir -p ~/.local/bin
 ln -sf /path/to/notebooklm-skill/bin/nlm ~/.local/bin/nlm
 ```
 
+symlink の代わりに、`NLM_SKILL_DIR` を使って skill checkout の `bin/nlm` に委譲する wrapper shim でも構いません。`nlm doctor` は symlink と wrapper の両方を診断します。
+
 `~/.local/bin` がログインシェルの PATH に入っていない場合は、ユーザーに確認してから永続設定に追加します。Linux ではまず `~/.profile` を候補にし、理由なく `.bashrc` を汚さないでください。追加後は新しい shell で確認します。
 
 ```bash
 command -v nlm
 nlm --help
+nlm doctor
 ```
 
 skill checkout の `bin/nlm` を直接呼ぶのは実装確認としては有効ですが、ユーザーが普段 `nlm` と打てることの確認とは分けて扱います。
@@ -203,6 +208,7 @@ notebook の新規作成、既存 notebook の選択、source 追加、artifact 
 - `command -v nlm` が失敗した場合は PATH shim が見えていない問題として扱います。一時的な PATH 追加で確認を通さないでください。
 - `nlm which` が失敗しただけなら、まず binding 未設定として扱います。runtime を作り直さないでください。
 - `Runtime not ready` が出た場合だけ shared runtime のセットアップを確認します。
+- `nlm doctor` が失敗した場合は、表示された `path`、`runtime`、`runtime doctor` の fail 行から対応する setup 手順へ戻ります。
 - `nlm use` が auth error で失敗した場合は、`uv run notebooklm doctor` と `uv run notebooklm login` を実行します。
 - `nlm ask` は回答だけを stdout に出す前提です。エラーや診断は stderr として扱います。
 

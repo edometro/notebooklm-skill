@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,6 +30,25 @@ class NlmError(Exception):
 class ExternalCommandError(Exception):
     def __init__(self, result: subprocess.CompletedProcess[str]):
         self.result = result
+
+
+def skill_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def skill_bin_nlm() -> Path:
+    return skill_root() / 'bin' / 'nlm'
+
+
+def same_file(left: Path, right: Path) -> bool:
+    try:
+        return left.samefile(right)
+    except OSError:
+        return False
+
+
+def print_check(name: str, status: str, detail: str, stdout: TextIO) -> None:
+    print(name + ': ' + status + ' - ' + detail, file=stdout)
 
 
 def parse_binding_fields(data: object, path: Path) -> tuple[str, str]:
@@ -311,10 +331,66 @@ def command_use(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int
     return 0
 
 
+def command_doctor(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
+    home = Path(os.environ.get("HOME", str(Path.home())))
+    ok = True
+
+    print('nlm doctor', file=stdout)
+    print_check('skill', 'ok', str(skill_root()), stdout)
+
+    expected_nlm = skill_bin_nlm()
+    path_nlm = shutil.which('nlm')
+    if path_nlm is None:
+        print_check('path', 'fail', 'nlm not found on PATH', stdout)
+        ok = False
+    else:
+        path_nlm_path = Path(path_nlm).resolve()
+        shim_text = path_nlm_path.read_text(encoding='utf-8', errors='ignore') if path_nlm_path.is_file() else ''
+        if same_file(path_nlm_path, expected_nlm):
+            print_check('path', 'ok', str(path_nlm_path), stdout)
+        elif str(skill_root()) in shim_text and 'bin/nlm' in shim_text:
+            print_check('path', 'ok', str(path_nlm_path) + ' delegates to ' + str(expected_nlm), stdout)
+        else:
+            print_check('path', 'fail', str(path_nlm_path) + ' does not point to ' + str(expected_nlm), stdout)
+            ok = False
+
+    notebooklm = runtime_notebooklm_path(home)
+    if notebooklm.is_file():
+        print_check('runtime', 'ok', str(notebooklm), stdout)
+        result = subprocess.run([str(notebooklm), 'doctor'], text=True, capture_output=True)
+        if result.returncode == 0:
+            print_check('runtime doctor', 'ok', 'notebooklm doctor passed', stdout)
+        else:
+            print_check('runtime doctor', 'fail', 'notebooklm doctor failed', stdout)
+            if result.stdout:
+                print(result.stdout, end="", file=stdout)
+            if result.stderr:
+                print(result.stderr, end="", file=stderr)
+            ok = False
+    else:
+        print_check('runtime', 'fail', str(notebooklm) + ' not found', stdout)
+        ok = False
+
+    try:
+        binding = resolve_binding(Path.cwd(), home)
+    except NlmError as exc:
+        print_check('binding', 'fail', str(exc), stdout)
+        ok = False
+    else:
+        if binding is None:
+            print_check('binding', 'warn', 'No NotebookLM binding found for this workspace.', stdout)
+        else:
+            print_check('binding', 'ok', binding.notebook_name + ' (' + binding.notebook_id + ')', stdout)
+            print_binding(binding, stdout)
+
+    return 0 if ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="nlm")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("which")
+    subparsers.add_parser("doctor")
     ask_parser = subparsers.add_parser("ask")
     ask_parser.add_argument("question", nargs="*")
     use_parser = subparsers.add_parser("use")
@@ -336,6 +412,8 @@ def main(
     try:
         if args.command == "which":
             return command_which(args, stdout, stderr)
+        if args.command == "doctor":
+            return command_doctor(args, stdout, stderr)
         if args.command == "ask":
             return command_ask(args, stdin, stdout, stderr)
         if args.command == "use":

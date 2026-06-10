@@ -7,13 +7,15 @@ problems, and how to keep tests useful when the CLI evolves.
 
 Do not modify `PATH` during user-facing verification. This rule is about
 verification commands, not about first-time installation. Creating a persistent
-shim such as `~/.local/bin/nlm` is valid setup work when the user approves it.
+shim such as `~/.local/bin/nlm` is valid setup work when the user approves it. The shim may be a symlink or a small wrapper that delegates to the skill checkout.
+
 
 First verify the command exactly as the user would run it:
 
 ```bash
 command -v nlm
 nlm --help
+nlm doctor
 ```
 
 If this fails, report that the PATH shim is missing or not visible in the
@@ -47,6 +49,7 @@ Stable behavior worth testing:
 - The NotebookLM runtime is under `~/.local/share/notebooklm-skill`, not inside a
   skill checkout.
 - `nlm use` writes versioned binding data.
+- `nlm doctor` separates PATH shim, runtime, runtime doctor, and binding checks.
 
 Avoid overfitting tests to unstable details:
 
