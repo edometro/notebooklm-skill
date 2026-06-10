@@ -5,7 +5,9 @@ problems, and how to keep tests useful when the CLI evolves.
 
 ## PATH policy
 
-Do not modify `PATH` during user-facing verification.
+Do not modify `PATH` during user-facing verification. This rule is about
+verification commands, not about first-time installation. Creating a persistent
+shim such as `~/.local/bin/nlm` is valid setup work when the user approves it.
 
 First verify the command exactly as the user would run it:
 
