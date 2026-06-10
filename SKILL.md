@@ -18,6 +18,40 @@ description: Use Google NotebookLM from Codex through the shared nlm CLI. Trigge
 - project binding: workspace 内の `.notebooklmrc`
 - user path binding: `~/.local/state/notebooklm-skill/workspace-map.json`
 
+## Quick workflow
+
+1. まず現在地で binding を確認します。
+
+   ```bash
+   nlm which
+   ```
+
+2. binding が存在し、ユーザーが質問したいだけなら、そのまま質問します。
+
+   ```bash
+   nlm ask '質問文'
+   ```
+
+3. binding が存在しない場合は、既存 notebook を確認してユーザーに選ばせます。
+
+   ```bash
+   cd ~/.local/share/notebooklm-skill
+   uv run notebooklm list --json
+   ```
+
+4. ユーザーが notebook ID を選んだら、作業ディレクトリに保存します。
+
+   ```bash
+   nlm use <notebook-id>
+   ```
+
+5. `nlm` または NotebookLM runtime が見つからない場合だけ、Runtime セットアップに進みます。
+
+   ```bash
+   command -v nlm
+   test -x ~/.local/share/notebooklm-skill/.venv/bin/notebooklm
+   ```
+
 ## Runtime セットアップ
 
 `uv` がない場合は先に導入します。
@@ -125,6 +159,14 @@ uv run notebooklm download audio ./podcast.mp3
 ```
 
 対象 notebook が必要な操作では、事前に `nlm which` で binding を確認し、必要に応じて notebook ID を runtime command に渡してください。
+
+## Failure handling
+
+- `nlm which` が失敗しただけなら、まず binding 未設定として扱います。runtime を作り直さないでください。
+- `nlm use` が auth error で失敗した場合は、`uv run notebooklm doctor` と `uv run notebooklm login` を実行します。
+- `nlm ask` は回答だけを stdout に出す前提です。エラーや診断は stderr として扱います。
+- notebook の新規作成、既存 notebook の選択、source 追加、artifact 生成はユーザー確認を取ってから実行します。
+- skill checkout 内に `.venv` を作らないでください。runtime は `~/.local/share/notebooklm-skill` に置きます。
 
 ## Verified runtime
 
