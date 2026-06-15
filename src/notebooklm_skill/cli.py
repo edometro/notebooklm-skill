@@ -274,13 +274,9 @@ def command_ask(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr:
     notebooklm = require_runtime_command(home)
     ask_result = subprocess.run(
         [str(notebooklm), 'ask', '--notebook', binding.notebook_id, question],
-        text=True,
-        capture_output=True,
+        stdout=stdout,
+        stderr=stderr,
     )
-    if ask_result.stdout:
-        print(ask_result.stdout, end="", file=stdout)
-    if ask_result.stderr:
-        print(ask_result.stderr, end="", file=stderr)
     return ask_result.returncode
 
 
