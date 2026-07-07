@@ -191,14 +191,18 @@ nlm ask '質問文'
 ## Sources and artifacts
 
 ソース追加、Audio Overview 生成、artifact download など、まだ `nlm` にない操作は shared runtime の `notebooklm` を直接使います。
-事前に `nlm which` で対象 notebook を確認し、必要に応じて notebook ID を runtime command に渡してください。
+事前に `nlm which` で対象 notebook を確認し、**必ず `--notebook <id>` オプションを指定して実行してください。指定しないと、前回使用した別のノートブックに対して操作が実行されてしまう危険があります。**
 
 ```bash
+# 1. ターゲットのNotebook IDを確認・取得する
+NOTEBOOK_ID=$(nlm which)
+
+# 2. --notebook オプションを明示して実行する
 cd ~/.local/share/notebooklm-skill
-uv run notebooklm source add 'https://example.com/article'
-uv run notebooklm source list
-uv run notebooklm generate audio --wait
-uv run notebooklm download audio ./podcast.mp3
+uv run notebooklm source add --notebook "$NOTEBOOK_ID" 'https://example.com/article'
+uv run notebooklm source list --notebook "$NOTEBOOK_ID"
+uv run notebooklm generate audio --wait --notebook "$NOTEBOOK_ID"
+uv run notebooklm download audio ./podcast.mp3 --notebook "$NOTEBOOK_ID"
 ```
 
 notebook の新規作成、既存 notebook の選択、source 追加、artifact 生成はユーザー確認を取ってから実行します。
